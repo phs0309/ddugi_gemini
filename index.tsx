@@ -122,14 +122,13 @@ const App = () => {
           const values = line.split(',');
           
           if (values.length >= 25) {
+            // 카드에 필요한 정보만 추출: 이름, 주소, 평점, 평점개수, 이미지 URL
             const restaurant = {
               name: (values[1] || values[20] || '').replace(/"/g, ''),
               address: (values[8] || values[23] || '').replace(/"/g, ''),
               rating: parseFloat(values[21]) || 0,
               ratingCount: parseInt(values[22]) || 0,
-              phone: (values[10] || '').replace(/"/g, ''),
-              menu: (values[13] || '').replace(/"/g, ''),
-              district: (values[2] || '').replace(/"/g, '')
+              imageUrl: (values[24] || '').replace(/"/g, '') // 이미지 URL 필드 추가
             };
             
             if (restaurant.name && restaurant.name.trim()) {
