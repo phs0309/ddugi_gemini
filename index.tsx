@@ -7,7 +7,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { GoogleGenAI } from '@google/genai';
 import './index.css';
-import restaurantData from './비짓부산_cleaned_reviews.csv?raw';
 
 const TtugiAvatar = () => (
   <div className="avatar">
@@ -102,62 +101,53 @@ const App = () => {
 
   const ai = useMemo(() => new GoogleGenAI({ apiKey: process.env.API_KEY }), []);
 
-  // CSV 데이터 파싱
+  // CSV 데이터 로드
   useEffect(() => {
-    const parseCSV = () => {
-      const lines = restaurantData.split('\n');
-      const headers = lines[0].split(',');
-      const restaurants = [];
-      
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i];
-        if (!line.trim()) continue;
+    const loadRestaurantData = async () => {
+      try {
+        const response = await fetch('./비짓부산_cleaned_reviews.csv');
+        const csvText = await response.text();
         
-        // CSV 파싱 (간단한 방식)
-        const values = [];
-        let current = '';
-        let inQuotes = false;
+        const lines = csvText.split('\n');
+        const restaurants = [];
         
-        for (let j = 0; j < line.length; j++) {
-          const char = line[j];
-          if (char === '"') {
-            inQuotes = !inQuotes;
-          } else if (char === ',' && !inQuotes) {
-            values.push(current.trim());
-            current = '';
-          } else {
-            current += char;
-          }
-        }
-        values.push(current.trim());
+        // 처음 100개만 파싱 (성능 개선)
+        const maxRows = Math.min(100, lines.length - 1);
         
-        if (values.length >= 25) {
-          const restaurant = {
-            name: values[1] || values[20], // MAIN_TITLE 또는 google_name
-            address: values[8] || values[23], // ADDR1 또는 google_address
-            rating: parseFloat(values[21]) || 0, // google_rating
-            ratingCount: parseInt(values[22]) || 0, // google_review_count
-            phone: values[10], // CNTCT_TEL
-            menu: values[13], // RPRSNTV_MENU
-            hours: values[12], // USAGE_DAY_WEEK_AND_TIME
-            district: values[2], // GUGUN_NM
-            description: values[16], // ITEMCNTNTS
-            reviews: [
-              values[25], values[26], values[27], values[28], values[29]
-            ].filter(r => r && r.trim())
-          };
+        for (let i = 1; i <= maxRows; i++) {
+          const line = lines[i];
+          if (!line.trim()) continue;
           
-          if (restaurant.name && restaurant.name.trim()) {
-            restaurants.push(restaurant);
+          // 간단한 CSV 파싱
+          const values = line.split(',');
+          
+          if (values.length >= 25) {
+            const restaurant = {
+              name: (values[1] || values[20] || '').replace(/"/g, ''),
+              address: (values[8] || values[23] || '').replace(/"/g, ''),
+              rating: parseFloat(values[21]) || 0,
+              ratingCount: parseInt(values[22]) || 0,
+              phone: (values[10] || '').replace(/"/g, ''),
+              menu: (values[13] || '').replace(/"/g, ''),
+              district: (values[2] || '').replace(/"/g, '')
+            };
+            
+            if (restaurant.name && restaurant.name.trim()) {
+              restaurants.push(restaurant);
+            }
           }
         }
+        
+        setCsvRestaurants(restaurants);
+        console.log(`Loaded ${restaurants.length} restaurants from CSV`);
+      } catch (error) {
+        console.error('Failed to load restaurant data:', error);
+        // CSV 로드 실패해도 Google 검색은 계속 작동
+        setCsvRestaurants([]);
       }
-      
-      setCsvRestaurants(restaurants);
-      console.log(`Loaded ${restaurants.length} restaurants from CSV`);
     };
     
-    parseCSV();
+    loadRestaurantData();
   }, []);
 
   useEffect(() => {
@@ -194,17 +184,7 @@ const App = () => {
 
 대화할 때는 줄바꿈(\\n)을 적절히 사용해서 읽기 쉽게 해줘. 긴 문장은 여러 줄로 나누고, 중요한 내용은 한 줄 띄워서 강조해줘.
 
-사용자가 맛집을 추천해달라고 하면, 다음 두 가지 방법을 모두 사용해서 맛집을 찾아줘:
-1. Google 검색을 사용해서 최신 맛집 정보 검색
-2. 아래 부산 맛집 데이터베이스에서 관련 맛집 검색
-
-부산 맛집 데이터베이스:
-${csvRestaurants.slice(0, 50).map(r => 
-  `${r.name} (${r.district}) - ${r.menu || '정보없음'} - 평점: ${r.rating || 'N/A'} (${r.ratingCount || 0}명)`
-).join('\n')}
-... 총 ${csvRestaurants.length}개 맛집 데이터 보유
-
-맛집 정보는 반드시 다음 JSON 형식에 맞춰서 응답의 일부로 포함해줘. 추천하는 맛집이 여러 개일 수 있어.
+사용자가 맛집을 추천해달라고 하면, Google 검색을 사용해서 실제 맛집 정보를 찾아줘. 맛집 정보는 반드시 다음 JSON 형식에 맞춰서 응답의 일부로 포함해줘. 추천하는 맛집이 여러 개일 수 있어.
 
 \`\`\`json
 [
@@ -221,13 +201,7 @@ ${csvRestaurants.slice(0, 50).map(r =>
 
 설명할 때는 절대 아스테리스크(또는 별표)를 사용하지 마. 대신 줄바꿈과 적절한 띄어쓰기를 사용해서 정보를 정리해줘.
 
-맛집 추천 시 우선순위:
-1. 사용자 요청과 정확히 일치하는 지역/음식 종류
-2. 평점이 높고 리뷰가 많은 곳
-3. 데이터베이스에 있는 검증된 맛집 우선 추천
-4. Google 검색으로 최신 정보 보완
-
-name, address, rating, ratingCount 필드는 데이터베이스 정보를 우선 사용하고, 없으면 Google 검색 결과를 사용해줘.
+name, address, rating, ratingCount 필드는 Google 검색 결과에서 찾은 가장 정확한 정보로 채워줘.
 
 mapsQuery 필드는 Google 지도에서 해당 장소를 바로 찾을 수 있도록 지역명과 상호명 형식의 검색어로 만들어줘.
 
