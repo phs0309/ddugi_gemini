@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ManyChat 웹훅 테스트</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #555;
+        }
+        input, textarea, button, select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .response {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            border-left: 4px solid #28a745;
+            background-color: #d4edda;
+        }
+        .error {
+            border-left: 4px solid #dc3545;
+            background-color: #f8d7da;
+        }
+        .example {
+            background-color: #e7f3ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-style: italic;
+        }
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .preset-buttons button {
+            width: auto;
+            padding: 8px 16px;
+            background-color: #6c757d;
+            font-size: 12px;
+        }
+        .preset-buttons button:hover {
+            background-color: #545b62;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 ManyChat 웹훅 테스트</h1>
+        
+        <!-- 기본 메시지 테스트 -->
+        <div class="test-section">
+            <h3>1. 기본 메시지 테스트</h3>
+            <p>ManyChat이 뚜기에게 보내는 메시지를 시뮬레이션합니다.</p>
+            
+            <label>사용자 이름:</label>
+            <input type="text" id="firstName" placeholder="김" value="김">
+            
+            <label>사용자 성:</label>
+            <input type="text" id="lastName" placeholder="부산" value="부산">
+            
+            <label>사용자 ID:</label>
+            <input type="text" id="userId" placeholder="user123" value="user123">
+            
+            <label>메시지:</label>
+            <div class="preset-buttons">
+                <button onclick="setMessage('맛집 추천해줘')">맛집 추천해줘</button>
+                <button onclick="setMessage('해운대 국밥집')">해운대 국밥집</button>
+                <button onclick="setMessage('서면 치킨 맛집')">서면 치킨 맛집</button>
+                <button onclick="setMessage('광안리 회집')">광안리 회집</button>
+                <button onclick="setMessage('남포동 카페')">남포동 카페</button>
+            </div>
+            <textarea id="userMessage" placeholder="테스트할 메시지 입력" rows="3">맛집 추천해줘</textarea>
+            
+            <button onclick="testManyChat()">ManyChat 웹훅 테스트</button>
+            <div id="manyChatResponse" class="response" style="display: none;"></div>
+        </div>
+
+        <!-- JSON 응답 분석 -->
+        <div class="test-section">
+            <h3>2. JSON 응답 분석</h3>
+            <p>ManyChat에서 받을 JSON 응답을 분석합니다.</p>
+            
+            <button onclick="analyzeLastResponse()">마지막 응답 분석</button>
+            <div id="analysisResult" class="response" style="display: none;"></div>
+        </div>
+
+        <!-- 직접 API 테스트 -->
+        <div class="test-section">
+            <h3>3. 기존 API 직접 테스트</h3>
+            <p>기존 restaurants API를 직접 호출하여 비교합니다.</p>
+            
+            <input type="text" id="directQuery" placeholder="검색어" value="해운대 국밥">
+            <input type="text" id="directLocation" placeholder="지역 (선택사항)" value="해운대구">
+            
+            <button onclick="testDirectAPI()">직접 API 호출</button>
+            <div id="directApiResponse" class="response" style="display: none;"></div>
+        </div>
+
+        <!-- 건강 상태 확인 -->
+        <div class="test-section">
+            <h3>4. 시스템 상태 확인</h3>
+            <p>API 서버 상태를 확인합니다.</p>
+            
+            <button onclick="testHealth()">상태 확인</button>
+            <div id="healthResponse" class="response" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let lastResponse = null;
+
+        function setMessage(message) {
+            document.getElementById('userMessage').value = message;
+        }
+
+        // ManyChat 웹훅 테스트
+        async function testManyChat() {
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const userId = document.getElementById('userId').value;
+            const userMessage = document.getElementById('userMessage').value;
+            const responseDiv = document.getElementById('manyChatResponse');
+            
+            try {
+                const payload = {
+                    user_input: userMessage,
+                    user_id: userId,
+                    first_name: firstName,
+                    last_name: lastName,
+                    profile_pic: "https://example.com/profile.jpg",
+                    locale: "ko_KR"
+                };
+
+                responseDiv.textContent = 'ManyChat 웹훅 호출 중...';
+                responseDiv.className = 'response';
+                responseDiv.style.display = 'block';
+
+                const response = await fetch('/api/manychat-webhook', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                lastResponse = result;
+                
+                responseDiv.className = 'response ' + (response.ok ? 'success' : 'error');
+                responseDiv.textContent = `Status: ${response.status}\n\n${JSON.stringify(result, null, 2)}`;
+                
+            } catch (error) {
+                responseDiv.className = 'response error';
+                responseDiv.textContent = `Error: ${error.message}`;
+                responseDiv.style.display = 'block';
+            }
+        }
+
+        // 응답 분석
+        function analyzeLastResponse() {
+            const responseDiv = document.getElementById('analysisResult');
+            
+            if (!lastResponse) {
+                responseDiv.className = 'response error';
+                responseDiv.textContent = '먼저 ManyChat 웹훅을 테스트해주세요.';
+                responseDiv.style.display = 'block';
+                return;
+            }
+
+            let analysis = '=== ManyChat 응답 분석 ===\n\n';
+            
+            if (lastResponse.version) {
+                analysis += `버전: ${lastResponse.version}\n\n`;
+            }
+
+            if (lastResponse.content && lastResponse.content.messages) {
+                analysis += `메시지 개수: ${lastResponse.content.messages.length}\n\n`;
+                
+                lastResponse.content.messages.forEach((msg, index) => {
+                    analysis += `메시지 ${index + 1}:\n`;
+                    analysis += `  타입: ${msg.type}\n`;
+                    
+                    if (msg.text) {
+                        analysis += `  텍스트: ${msg.text}\n`;
+                    }
+                    
+                    if (msg.url) {
+                        analysis += `  이미지 URL: ${msg.url}\n`;
+                    }
+                    
+                    if (msg.quick_replies) {
+                        analysis += `  Quick Replies: ${msg.quick_replies.length}개\n`;
+                        msg.quick_replies.forEach((reply, i) => {
+                            analysis += `    ${i + 1}. ${reply.caption} (${reply.type})\n`;
+                        });
+                    }
+                    
+                    analysis += '\n';
+                });
+            }
+
+            responseDiv.className = 'response success';
+            responseDiv.textContent = analysis;
+            responseDiv.style.display = 'block';
+        }
+
+        // 직접 API 테스트
+        async function testDirectAPI() {
+            const query = document.getElementById('directQuery').value;
+            const location = document.getElementById('directLocation').value;
+            const responseDiv = document.getElementById('directApiResponse');
+            
+            try {
+                const payload = { query };
+                if (location) payload.location = location;
+
+                responseDiv.textContent = 'API 호출 중...';
+                responseDiv.className = 'response';
+                responseDiv.style.display = 'block';
+
+                const response = await fetch('/api/restaurants', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                
+                responseDiv.className = 'response ' + (response.ok ? 'success' : 'error');
+                responseDiv.textContent = `Status: ${response.status}\n\n${JSON.stringify(result, null, 2)}`;
+                
+            } catch (error) {
+                responseDiv.className = 'response error';
+                responseDiv.textContent = `Error: ${error.message}`;
+                responseDiv.style.display = 'block';
+            }
+        }
+
+        // 건강 상태 확인
+        async function testHealth() {
+            const responseDiv = document.getElementById('healthResponse');
+            
+            try {
+                responseDiv.textContent = '상태 확인 중...';
+                responseDiv.className = 'response';
+                responseDiv.style.display = 'block';
+
+                const response = await fetch('/api/health');
+                const result = await response.json();
+                
+                responseDiv.className = 'response ' + (response.ok ? 'success' : 'error');
+                responseDiv.textContent = JSON.stringify(result, null, 2);
+                
+            } catch (error) {
+                responseDiv.className = 'response error';
+                responseDiv.textContent = `Error: ${error.message}`;
+                responseDiv.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
