@@ -172,6 +172,8 @@ const App = () => {
     setIsLoading(true);
 
     try {
+      console.log("Starting API call...");
+      
       const contents = newMessages
         .filter(msg => msg.text)
         .map(msg => ({
@@ -216,13 +218,16 @@ imageUrl 필드는 Google 이미지 검색을 사용해서 해당 식당을 가�
 
 JSON 데이터는 항상 \`\`\`json ... \`\`\` 코드 블록 안에 넣어서 보내줘.`;
 
+      console.log("Creating model...");
       const model = ai.getGenerativeModel({
           model: "gemini-2.5-flash",
           systemInstruction: systemInstruction,
           tools: [{ googleSearch: {} }],
       });
 
+      console.log("Calling generateContent...");
       const response = await model.generateContent(contents);
+      console.log("API Response received:", response);
 
       let responseText = response.text;
       let restaurants = [];
@@ -244,10 +249,11 @@ JSON 데이터는 항상 \`\`\`json ... \`\`\` 코드 블록 안에 넣어서 �
       };
       setMessages(prev => [...prev, modelMessage]);
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error("Error in handleSendMessage:", error);
       const errorMessage = { role: 'model', text: '미안하데이, 지금은 답하기 쪼매 곤란하네.\n\n잠시 뒤에 다시 물어봐주겠나?', restaurants: [] };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
+      console.log("Setting loading to false");
       setIsLoading(false);
     }
   };
