@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>뚜기 API 테스트</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, button { padding: 10px; font-size: 16px; }
+        input { width: 100%; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; }
+        .restaurant { margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        .error { color: red; }
+        .loading { color: #666; }
+    </style>
+</head>
+<body>
+    <h1>뚜기 맛집 추천 API 테스트</h1>
+    
+    <form id="testForm">
+        <div class="form-group">
+            <label for="query">검색어 (필수):</label>
+            <input type="text" id="query" placeholder="예: 해운대 국밥, 서면 치킨" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="location">지역 (선택):</label>
+            <input type="text" id="location" placeholder="예: 해운대구, 서면">
+        </div>
+        
+        <button type="submit">맛집 추천 받기</button>
+    </form>
+    
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const query = document.getElementById('query').value;
+            const location = document.getElementById('location').value;
+            const resultDiv = document.getElementById('result');
+            
+            resultDiv.innerHTML = '<div class="loading">맛집을 찾고 있습니다...</div>';
+            
+            try {
+                const response = await fetch('/api/restaurants', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query, location })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    let html = `
+                        <div class="result">
+                            <h3>뚜기의 추천:</h3>
+                            <p>${data.message}</p>
+                            <h4>추천 맛집 (${data.restaurants.length}곳):</h4>
+                    `;
+                    
+                    data.restaurants.forEach(restaurant => {
+                        html += `
+                            <div class="restaurant">
+                                <h5>${restaurant.name}</h5>
+                                <p><strong>주소:</strong> ${restaurant.address}</p>
+                                <p><strong>평점:</strong> ${restaurant.rating} ⭐ (${restaurant.ratingCount}명)</p>
+                                <p><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.mapsQuery)}" target="_blank">지도에서 보기</a></p>
+                                ${restaurant.imageUrl ? `<img src="${restaurant.imageUrl}" alt="${restaurant.name}" style="max-width: 200px; max-height: 150px;">` : ''}
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">오류: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">요청 실패: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>
