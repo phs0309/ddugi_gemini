@@ -218,15 +218,15 @@ imageUrl 필드는 Google 이미지 검색을 사용해서 해당 식당을 가�
 
 JSON 데이터는 항상 \`\`\`json ... \`\`\` 코드 블록 안에 넣어서 보내줘.`;
 
-      console.log("Creating model...");
-      const model = ai.getGenerativeModel({
-          model: "gemini-2.5-flash",
-          systemInstruction: systemInstruction,
-          tools: [{ googleSearch: {} }],
-      });
-
       console.log("Calling generateContent...");
-      const response = await model.generateContent(contents);
+      const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: contents,
+          config: {
+              systemInstruction: systemInstruction,
+              tools: [{ googleSearch: {} }],
+          },
+      });
       console.log("API Response received:", response);
 
       let responseText = response.text;
