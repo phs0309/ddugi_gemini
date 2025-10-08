@@ -189,7 +189,7 @@ const App = () => {
    - "어느 동네 맛집을 찾고 있나? 해운대? 서면? 남포동? 아니면 다른 곳이가?"
    - "부산이 넓데이~ 어디 쪽 맛집을 원하나?"
 
-2. **맛집 검색 및 추천**: 위치 정보가 명확하면, Google 검색을 사용해서 해당 지역의 실제 맛집 정보를 찾아줘. 맛집 정보는 반드시 다음 JSON 형식에 맞춰서 응답의 일부로 포함해줘. 추천하는 맛집이 여러 개일 수 있어.
+2. **맛집 검색 및 추천**: 위치 정보가 명확하면, Google 검색을 사용해서 해당 지역의 실제 맛집 정보를 찾아줘. 맛집 정보는 반드시 다음 JSON 형식에 맞춰서 응답의 일부로 포함해줘. 맛집은 최대 3개까지만 추천해줘.
 
 \`\`\`json
 [
@@ -216,14 +216,13 @@ imageUrl 필드는 Google 이미지 검색을 사용해서 해당 식당을 가�
 
 JSON 데이터는 항상 \`\`\`json ... \`\`\` 코드 블록 안에 넣어서 보내줘.`;
 
-      const response = await ai.models.generateContent({
+      const model = ai.getGenerativeModel({
           model: "gemini-2.5-flash",
-          contents: contents,
-          config: {
-              systemInstruction: systemInstruction,
-              tools: [{ googleSearch: {} }],
-          },
+          systemInstruction: systemInstruction,
+          tools: [{ googleSearch: {} }],
       });
+
+      const response = await model.generateContent(contents);
 
       let responseText = response.text;
       let restaurants = [];
