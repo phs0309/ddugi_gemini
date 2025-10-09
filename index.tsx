@@ -31,6 +31,65 @@ const StarIcon = () => (
     </svg>
 );
 
+const MapPinIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+        <circle cx="12" cy="10" r="3"></circle>
+    </svg>
+);
+
+const RestaurantCard = ({ restaurant }) => {
+    const [imageSrc, setImageSrc] = useState(restaurant.imageUrl);
+
+    useEffect(() => {
+        setImageSrc(restaurant.imageUrl);
+    }, [restaurant.imageUrl]);
+
+    const handleImageError = () => {
+        setImageSrc(null);
+    };
+
+    return (
+        <div className="restaurant-card">
+            {imageSrc ? (
+                <img
+                    src={imageSrc}
+                    alt={`${restaurant.name} 사진`}
+                    className="restaurant-thumbnail"
+                    onError={handleImageError}
+                />
+            ) : (
+                <div className="restaurant-thumbnail placeholder">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                </div>
+            )}
+            <div className="restaurant-info">
+                <h3>{restaurant.name}</h3>
+                {restaurant.address && <p className="address">{restaurant.address}</p>}
+                {restaurant.rating && restaurant.ratingCount && (
+                    <div className="rating">
+                        <StarIcon />
+                        <span>{restaurant.rating.toFixed(1)}</span>
+                        <span className="rating-count">({restaurant.ratingCount.toLocaleString()})</span>
+                    </div>
+                )}
+            </div>
+            {restaurant.mapsQuery && (
+                <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.mapsQuery)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="map-link"
+                    aria-label={`${restaurant.name} 지도에서 보기`}
+                >
+                    <MapPinIcon />
+                    <span>지도</span>
+                </a>
+            )}
+        </div>
+    );
+};
+
 
 
 
@@ -94,7 +153,7 @@ const App = () => {
 
   useEffect(() => {
     setMessages([
-      { role: 'model', text: '이 몸이 바로 부산 최고의 영웅 뚜기다!!\n\n맛집 찾는 거? 뚜기에게 맡겨! 알려주지!!\n\n"해운대 카페" 이런 식으로 말해 봐. 어떠냐?' }
+      { role: 'model', text: '이 몸이 바로 부산 최고의 영웅 뚜기다!!\n\n맛집 찾는 거? 뚜기에게 맡겨! 알려주지!!\n\n"해운대 카페" 이런 식으로 말해 봐. 어떠냐?', restaurants: [] }
     ]);
   }, []);
 
@@ -108,7 +167,7 @@ const App = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMessage = { role: 'user', text: input };
+    const userMessage = { role: 'user', text: input, restaurants: [] };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput('');
@@ -156,46 +215,61 @@ const App = () => {
    - "어디 맛집? 해운대? 서면? 남포동? 어디야?"
    - "부산이 넓은데 어느 동네 말하는 건가?"
 
-2. **맛집 검색 및 추천**: 위치 정보가 명확하면, Google 검색을 사용해서 해당 지역의 **2030 세대가 좋아할만한 트렌디한 맛집**을 우선적으로 찾아줘. 각 맛집마다 짧게 특징이나 정보를 같이 설명해줘 (예: "인스타 핫플", "분위기 좋은 데이트 코스", "특제 메뉴가 유명한 곳" 등). 맛집은 최대 3개까지만 추천해줘.
+2. **맛집 검색 및 추천**: 위치 정보가 명확하면, Google 검색을 사용해서 해당 지역의 **2030 세대가 좋아할만한 트렌디한 맛집**을 우선적으로 찾아줘. 각 맛집마다 짧게 특징이나 정보를 같이 설명해줘 (예: "인스타 핫플", "분위기 좋은 데이트 코스", "특제 메뉴가 유명한 곳" 등). 맛집 정보는 반드시 다음 JSON 형식에 맞춰서 응답의 일부로 포함해줘. 맛집은 최대 3개까지만 추천해줘.
+
+\`\`\`json
+[
+  {
+    "name": "식당 이름",
+    "address": "정확한 주소",
+    "rating": 4.5,
+    "ratingCount": 1234,
+    "mapsQuery": "Google 지도에서 검색할 정확한 쿼리 (예: '부산 해운대구 우동 해운대소문난암소갈비집')"
+  }
+]
+\`\`\`
 
 설명할 때는 절대 아스테리스크(또는 별표)를 사용하지 마. 대신 줄바꿈과 적절한 띄어쓰기를 사용해서 정보를 정리해줘.
 
-각 맛집마다 다음 정보를 포함해서 자연스러운 문장으로 설명해줘:
-- 식당 이름
-- 주소
-- 평점 정보 (있는 경우)
-- 특징이나 추천 이유
+name, address, rating, ratingCount 필드는 Google 검색 결과에서 찾은 가장 정확한 정보로 채워줘.
 
-예시 형식:
-"◆ 맛집이름 - 정확한주소
-평점 4.5점 (리뷰 1,234개)
-인스타 핫플로 유명한 분위기 좋은 카페"
+mapsQuery 필드는 Google 지도에서 해당 장소를 바로 찾을 수 있도록 지역명과 상호명 형식의 검색어로 만들어줘.
 
-"뭐... 별거 아니지만 이런 곳들이 괜찮나?" 또는 "그냥 한번 가봐. 나쁘지 않을 거야." 같이 시크한 척 하면서도 실제로는 정성스럽게 찾아준 티를 내는 문장을 사용해줘.`;
+일반적인 대화와 함께 이 JSON 형식의 데이터를 제공해줘. 예를 들어, "뭐... 별거 아니지만 이런 곳들이 괜찮나?" 또는 "그냥 한번 가봐. 나쁘지 않을 거야." 같이 시크한 척 하면서도 실제로는 정성스럽게 찾아준 티를 내는 문장을 사용해줘.
+
+JSON 데이터는 항상 \`\`\`json ... \`\`\` 코드 블록 안에 넣어서 보내줘.`;
 
       console.log("Calling generateContent...");
-      const response = await ai.models.generateContent({
+      const model = ai.getGenerativeModel({
           model: "gemini-2.5-flash",
-          contents: contents,
-          config: {
-              systemInstruction: systemInstruction,
-              tools: [{ googleSearch: {} }],
-          },
+          systemInstruction: systemInstruction,
+          tools: [{ googleSearch: {} }],
       });
+      const response = await model.generateContent(contents);
       console.log("API Response received:", response);
 
-      let responseText = response.text;
-      // JSON 블록을 완전히 제거하고 텍스트만 사용
-      responseText = responseText.replace(/```json[\s\S]*?```/g, '').trim();
+      let responseText = response.response.text();
+      let restaurants = [];
+      const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
+      
+      if (jsonMatch && jsonMatch[1]) {
+          try {
+              restaurants = JSON.parse(jsonMatch[1]);
+              responseText = responseText.replace(/```json\n([\s\S]*?)\n```/, '').trim();
+          } catch (e) {
+              console.error("Failed to parse JSON:", e);
+          }
+      }
       
       const modelMessage = {
           role: 'model',
           text: responseText,
+          restaurants: restaurants,
       };
       setMessages(prev => [...prev, modelMessage]);
     } catch (error) {
       console.error("Error in handleSendMessage:", error);
-      const errorMessage = { role: 'model', text: '어... 어라? 뚜기가 지금 좀... 아니다! 일부러 그런 거야!!\n\n잠깐만 기다려! 뚜기가 다시 알려줄게!' };
+      const errorMessage = { role: 'model', text: '어... 어라? 뚜기가 지금 좀... 아니다! 일부러 그런 거야!!\n\n잠깐만 기다려! 뚜기가 다시 알려줄게!', restaurants: [] };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       console.log("Setting loading to false");
@@ -215,6 +289,13 @@ const App = () => {
             <div className="message-content">
               {msg.text && <div className="message-bubble" style={{whiteSpace: 'pre-line'}}>{msg.text}</div>}
               
+              {msg.restaurants && msg.restaurants.length > 0 && (
+                <div className="restaurants-container">
+                    {msg.restaurants.map((resto, i) => (
+                        <RestaurantCard key={i} restaurant={resto} />
+                    ))}
+                </div>
+              )}
             </div>
           </div>
         ))}
