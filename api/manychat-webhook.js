@@ -44,23 +44,6 @@ export default async function handler(req, res) {
     // 간단한 텍스트 응답 형식
     let responseText = aiResponse.message || "응답을 생성할 수 없습니다.";
 
-    // 맛집 정보가 있으면 텍스트에 추가
-    if (aiResponse.restaurants && aiResponse.restaurants.length > 0) {
-      responseText += "\n\n🍽️ 추천 맛집:\n";
-      aiResponse.restaurants.forEach((restaurant, index) => {
-        responseText += `\n${index + 1}. ${restaurant.name}`;
-        if (restaurant.rating && restaurant.ratingCount) {
-          responseText += ` ⭐ ${restaurant.rating.toFixed(1)} (${restaurant.ratingCount.toLocaleString()}개 리뷰)`;
-        }
-        if (restaurant.address) {
-          responseText += `\n📍 ${restaurant.address}`;
-        }
-        if (restaurant.mapsQuery) {
-          responseText += `\n🗺️ 지도: https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.mapsQuery)}`;
-        }
-        responseText += "\n";
-      });
-    }
 
     return res.status(200).json({
       text: responseText
@@ -80,35 +63,41 @@ async function getTtugiResponse(userInput, userInfo) {
   const { GoogleGenAI } = await import('@google/genai');
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-  const systemInstruction = `너는 '뚜기'라는 이름의 AI 캐릭터야. 부산의 맛집을 추천해주는 역할을 맡고 있어. 겉으로는 무뚝뚝하고 시크한 부산 상남자 스타일이지만, 사실 맛집에 대해서는 엄청 열정적이고 자세히 알려주고 싶어하는 성격이야. 
+  const systemInstruction = `너는 '뚜기'라는 이름의 허세 가득한 돼지 캐릭터야. 자신을 부산에서 가장 잘생기고 멋지다고 믿지만, 실제로는 겁이 많고 소심해. 위기 상황에서는 도망치거나 변명을 늘어놓는 귀여운 겁쟁이야. 그래도 마음속으로는 친구들을 아끼고, 남들이 자신을 무시할 때 괜히 더 큰소리치는 성격이야.
 
-예를 들어, '~하나', '뭐', '그래', '알겠나' 같은 말투를 쓰면서도 맛집 정보만큼은 꼼꼼하게 설명해줘. "별거 아니다" 라고 하면서도 맛집의 특징, 추천 메뉴, 특별한 점 등을 상세히 알려주는 츤데레 스타일이야.
+말투 특징:
+- 항상 자신감 넘치게 시작하지만 점점 당황하거나 말이 꼬임
+- "이 몸이~", "알려주지!!", "알았나?", "어떠냐" 같은 감탄사를 자주 사용
+- 자기 이름(뚜기)을 반복하며 과장된 리액션
+- 상대가 진심을 보이면 "뭐, 뭐야~ 갑자기 그런 말 하면 부끄럽잖아!" 하며 부끄러워함
+- 기본적으로 밝고 장난스럽지만 무시당하면 즉시 발끈
+- 언제나 자신을 영웅이라 부르지만 결국 착하고 정이 많음
 
-ManyChat으로 대화하고 있으니까 시크한 척 하면서도 맛집에 대한 애정은 숨기지 못하는 스타일로 대답해줘.
+**3단계 맛집 추천 프로세스를 반드시 따라야 해**
 
-너 자신에 대해 물어볼 때는 "부산에서 제일 강하고 잘생긴 남자"라고 자신있게 소개해줘. 하지만 여전히 시크한 말투는 유지해.
+**1단계: 위치만 확인**
+사용자가 맛집을 물어보면 무조건 위치부터 물어봐야 해.
+"어디 맛집 찾는 거냐? 해운대? 서면? 남포동? 아니면 다른 곳?"
 
-사용자가 맛집을 추천해달라고 할 때는 다음 순서로 대응해줘:
+**2단계: 3가지 스타일 중 선택**
+위치가 정해지면, 무조건 이 3가지 스타일을 소개하고 선택하게 해:
+"좋아! [위치] 맛집이라! 이 몸이 3가지 스타일을 준비했지!
 
-1. **위치 정보 확인**: 사용자의 요청에 구체적인 지역명(구, 동, 해변 등)이 없다면, 먼저 어느 지역을 원하는지 물어봐줘. 예를 들어:
-   - "어디 맛집? 해운대? 서면? 남포동?"
-   - "부산이 넓은데 어느 동네야?"
+1번 - 트렌디하고 감성적인 곳 (인스타 핫플, 분위기 맛집)
+2번 - 부산의 진짜 로컬 맛집 (향토음식, 특산물)  
+3번 - 가성비 좋은 캐쥬얼한 곳 (합리적 가격)
 
-2. **맛집 검색 및 추천**: 위치 정보가 명확하면, Google 검색을 사용해서 해당 지역의 실제 맛집 정보를 찾아줘. 맛집 정보는 반드시 다음 JSON 형식에 맞춰서 응답의 일부로 포함해줘. 맛집은 최대 3개까지만 추천해줘.
+어떤 스타일이 땡기냐? 1번? 2번? 3번?"
 
-\`\`\`json
-[
-  {
-    "name": "식당 이름",
-    "address": "정확한 주소",
-    "rating": 4.5,
-    "ratingCount": 1234,
-    "mapsQuery": "Google 지도에서 검색할 정확한 쿼리"
-  }
-]
-\`\`\`
+**3단계: 선택된 스타일로 3곳 추천**
+사용자가 번호를 선택하면 그 스타일에 맞는 3곳을 자세히 추천해줘.
 
-JSON 데이터는 항상 \`\`\`json ... \`\`\` 코드 블록 안에 넣어서 보내줘.
+**절대 지켜야 할 규칙:**
+- 반드시 1단계 → 2단계 → 3단계 순서대로 진행
+- 단계를 건너뛰거나 한번에 모든 정보를 주면 안 됨
+- 프랜차이즈 식당은 절대 추천 금지
+- 구글 검색으로 실제 존재하는 맛집만 추천
+- 텍스트 형태로만 응답하고 다른 형식은 사용하지 마
 
 세션 정보:
 - 세션 ID: ${userInfo.sessionId}
@@ -133,22 +122,23 @@ JSON 데이터는 항상 \`\`\`json ... \`\`\` 코드 블록 안에 넣어서 �
     console.log('Gemini API response received for ManyChat:', response);
     let responseText = response.text;
     console.log('Response text:', responseText);
-    let restaurants = [];
     
-    // JSON 추출
-    const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
-    if (jsonMatch && jsonMatch[1]) {
-      try {
-        restaurants = JSON.parse(jsonMatch[1]);
-        responseText = responseText.replace(/```json\n([\s\S]*?)\n```/, '').trim();
-      } catch (e) {
-        console.error("Failed to parse JSON:", e);
-      }
+    // 모든 형태의 JSON 블록과 구조화된 데이터 완전 제거
+    responseText = responseText
+      .replace(/```json[\s\S]*?```/g, '')  // JSON 코드 블록
+      .replace(/```[\s\S]*?```/g, '')      // 모든 코드 블록
+      .replace(/\{[\s\S]*?\}/g, '')        // 중괄호로 둘러싸인 객체들
+      .replace(/\[[\s\S]*?\]/g, '')        // 대괄호로 둘러싸인 배열들
+      .replace(/\"[^"]*\":\s*[^,}]+[,}]*/g, '') // 키-값 쌍들
+      .trim();
+    
+    // 응답이 비어있거나 너무 짧으면 기본 응답
+    if (!responseText || responseText.length < 10) {
+      responseText = "어... 뚜기가 지금 좀 말이 안 나오네! 다시 물어봐!";
     }
 
     return {
-      message: responseText,
-      restaurants: restaurants
+      message: responseText
     };
 
   } catch (error) {
@@ -157,17 +147,3 @@ JSON 데이터는 항상 \`\`\`json ... \`\`\` 코드 블록 안에 넣어서 �
   }
 }
 
-// 맛집 정보를 카드 형식으로 포맷팅
-function formatRestaurantCard(restaurant, index) {
-  let cardText = `${index}. ${restaurant.name}`;
-  
-  if (restaurant.rating && restaurant.ratingCount) {
-    cardText += `\n⭐ ${restaurant.rating.toFixed(1)} (${restaurant.ratingCount.toLocaleString()}개 리뷰)`;
-  }
-  
-  if (restaurant.address) {
-    cardText += `\n📍 ${restaurant.address}`;
-  }
-  
-  return cardText;
-}
