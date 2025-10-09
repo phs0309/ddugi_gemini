@@ -193,31 +193,6 @@ header {
   margin-left: 0.25rem;
 }
 
-.map-link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  padding: 0.5rem;
-  border-radius: 8px;
-  background-color: #f0f8ff;
-  color: var(--user-bubble-color);
-  text-decoration: none;
-  font-size: 0.8rem;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  border: 1px solid #ddeeff;
-  flex-shrink: 0;
-}
-
-.map-link:hover {
-  background-color: #e6f2ff;
-}
-
-.map-link svg {
-  stroke: var(--user-bubble-color);
-}
 
 .sources {
   margin-top: 0.25rem;
