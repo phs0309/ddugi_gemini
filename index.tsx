@@ -215,29 +215,30 @@ const App = () => {
    - "어디 맛집? 해운대? 서면? 남포동? 어디야?"
    - "부산이 넓은데 어느 동네 말하는 건가?"
 
-2. **맛집 검색 및 추천**: 위치 정보가 명확하면, Google 검색을 사용해서 해당 지역의 **2030 세대가 좋아할만한 트렌디한 맛집**을 우선적으로 찾아줘. 각 맛집마다 짧게 특징이나 정보를 같이 설명해줘 (예: "인스타 핫플", "분위기 좋은 데이트 코스", "특제 메뉴가 유명한 곳" 등). 맛집 정보는 반드시 다음 JSON 형식에 맞춰서 응답의 일부로 포함해줘. 맛집은 최대 3개까지만 추천해줘.
+2. **맛집 검색 및 추천**: 위치 정보가 명확하면, Google 검색을 사용해서 해당 지역의 **2030 세대가 좋아할만한 트렌디한 맛집**을 우선적으로 찾아줘. 각 맛집마다 짧게 특징이나 정보를 같이 설명해줘 (예: "인스타 핫플", "분위기 좋은 데이트 코스", "특제 메뉴가 유명한 곳" 등). 맛집은 최대 3개까지만 추천해줘.
+
+**중요: 응답 방식**
+- 자연스럽고 간결한 대화체로 맛집을 소개해줘
+- 각 맛집의 이름, 특징, 추천 이유를 포함해서 설명
+- 절대 아스테리스크(*)나 별표를 사용하지 마
+- "뭐... 별거 아니지만 이런 곳들이 괜찮나?" 같은 시크한 말투 사용
+
+**데이터 제공 방식**
+맛집 정보는 응답 끝에 다음 JSON 형식으로 포함해줘:
 
 \`\`\`json
 [
   {
     "name": "식당 이름",
-    "address": "정확한 주소",
+    "address": "정확한 주소", 
     "rating": 4.5,
     "ratingCount": 1234,
-    "mapsQuery": "Google 지도에서 검색할 정확한 쿼리 (예: '부산 해운대구 우동 해운대소문난암소갈비집')"
+    "mapsQuery": "Google 지도 검색용 쿼리"
   }
 ]
 \`\`\`
 
-설명할 때는 절대 아스테리스크(또는 별표)를 사용하지 마. 대신 줄바꿈과 적절한 띄어쓰기를 사용해서 정보를 정리해줘.
-
-name, address, rating, ratingCount 필드는 Google 검색 결과에서 찾은 가장 정확한 정보로 채워줘.
-
-mapsQuery 필드는 Google 지도에서 해당 장소를 바로 찾을 수 있도록 지역명과 상호명 형식의 검색어로 만들어줘.
-
-일반적인 대화와 함께 이 JSON 형식의 데이터를 제공해줘. 예를 들어, "뭐... 별거 아니지만 이런 곳들이 괜찮나?" 또는 "그냥 한번 가봐. 나쁘지 않을 거야." 같이 시크한 척 하면서도 실제로는 정성스럽게 찾아준 티를 내는 문장을 사용해줘.
-
-JSON 데이터는 항상 \`\`\`json ... \`\`\` 코드 블록 안에 넣어서 보내줘.`;
+name, address, rating, ratingCount는 Google 검색 결과의 정확한 정보로 채우고, mapsQuery는 "지역명 + 상호명" 형식으로 만들어줘.`;
 
       console.log("Calling generateContent...");
       const model = ai.getGenerativeModel({
@@ -250,15 +251,25 @@ JSON 데이터는 항상 \`\`\`json ... \`\`\` 코드 블록 안에 넣어서 �
 
       let responseText = response.response.text();
       let restaurants = [];
-      const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
+      
+      // 다양한 형태의 JSON 블록을 찾아서 파싱
+      const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
       
       if (jsonMatch && jsonMatch[1]) {
           try {
               restaurants = JSON.parse(jsonMatch[1]);
-              responseText = responseText.replace(/```json\n([\s\S]*?)\n```/, '').trim();
+              console.log("Parsed restaurants:", restaurants);
           } catch (e) {
               console.error("Failed to parse JSON:", e);
           }
+      }
+      
+      // 모든 JSON 블록을 응답에서 완전히 제거
+      responseText = responseText.replace(/```json[\s\S]*?```/g, '').trim();
+      
+      // 응답이 비어있지 않도록 확인
+      if (!responseText) {
+          responseText = "어... 뚜기가 지금 좀 말이 안 나오네! 다시 물어봐!";
       }
       
       const modelMessage = {
