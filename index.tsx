@@ -31,12 +31,6 @@ const StarIcon = () => (
     </svg>
 );
 
-const MapPinIcon = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
-        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-        <circle cx="12" cy="10" r="3"></circle>
-    </svg>
-);
 
 const RestaurantCard = ({ restaurant }) => {
     const [imageSrc, setImageSrc] = useState(restaurant.imageUrl);
@@ -74,18 +68,6 @@ const RestaurantCard = ({ restaurant }) => {
                     </div>
                 )}
             </div>
-            {restaurant.mapsQuery && (
-                <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.mapsQuery)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="map-link"
-                    aria-label={`${restaurant.name} 지도에서 보기`}
-                >
-                    <MapPinIcon />
-                    <span>지도</span>
-                </a>
-            )}
         </div>
     );
 };
@@ -221,8 +203,7 @@ const App = () => {
     "name": "식당 이름",
     "address": "정확한 주소",
     "rating": 4.5,
-    "ratingCount": 1234,
-    "mapsQuery": "Google 지도에서 검색할 정확한 쿼리 (예: '부산 해운대구 우동 해운대소문난암소갈비집')"
+    "ratingCount": 1234
   }
 ]
 \`\`\`
@@ -230,8 +211,6 @@ const App = () => {
 설명할 때는 절대 아스테리스크(또는 별표)를 사용하지 마. 대신 줄바꿈과 적절한 띄어쓰기를 사용해서 정보를 정리해줘.
 
 name, address, rating, ratingCount 필드는 Google 검색 결과에서 찾은 가장 정확한 정보로 채워줘.
-
-mapsQuery 필드는 Google 지도에서 해당 장소를 바로 찾을 수 있도록 지역명과 상호명 형식의 검색어로 만들어줘.
 
 일반적인 대화와 함께 이 JSON 형식의 데이터를 제공해줘. 예를 들어, "뭐... 별거 아니지만 이런 곳들이 괜찮나?" 또는 "그냥 한번 가봐. 나쁘지 않을 거야." 같이 시크한 척 하면서도 실제로는 정성스럽게 찾아준 티를 내는 문장을 사용해줘.
 
