@@ -239,6 +239,22 @@ const App = () => {
 - 절대 아스테리스크(*)나 별표를 사용하지 마
 - "뭐... 별거 아니지만 이런 곳들이 괜찮나?" 같은 시크한 말투로 시작하고 끝내기
 
+**데이터 제공 방식**
+맛집 추천 시 응답 끝에 다음 JSON 형식으로 맛집 정보를 포함해줘:
+
+\`\`\`json
+[
+  {
+    "name": "식당 이름",
+    "address": "정확한 주소", 
+    "rating": 4.5,
+    "ratingCount": 1234,
+    "description": "특징이나 추천 이유",
+    "mapsQuery": "지역명 + 상호명"
+  }
+]
+\`\`\`
+
 `;
 
       console.log("Calling generateContent...");
