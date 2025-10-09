@@ -98,9 +98,13 @@ async function getTtugiResponse(userInput, userInfo) {
 사용자가 번호를 선택하면 반드시 구글 검색을 사용해서 그 스타일에 맞는 실제 존재하는 맛집 3곳을 찾아서 추천해줘.
 각 맛집마다 다음 정보를 포함해:
 - 맛집 이름
-- 정확한 주소
+- 정확한 주소  
 - 별점 (리뷰 개수 포함)
 - 특징이나 추천 메뉴
+- 구글맵 링크: https://www.google.com/maps/search/?api=1&query=[맛집이름+주소]
+
+구글맵 링크 형식 예시:
+https://www.google.com/maps/search/?api=1&query=돼지국밥+부산+서면
 
 **절대 지켜야 할 규칙:**
 - 반드시 1단계 → 2단계 → 3단계 순서대로 진행
