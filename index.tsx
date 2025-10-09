@@ -66,6 +66,7 @@ const RestaurantCard = ({ restaurant }) => {
             <div className="restaurant-info">
                 <h3>{restaurant.name}</h3>
                 {restaurant.address && <p className="address">{restaurant.address}</p>}
+                {restaurant.description && <p className="description">{restaurant.description}</p>}
                 {restaurant.rating && restaurant.ratingCount && (
                     <div className="rating">
                         <StarIcon />
@@ -233,12 +234,13 @@ const App = () => {
     "address": "정확한 주소", 
     "rating": 4.5,
     "ratingCount": 1234,
+    "description": "특징이나 추천 이유 (예: 인스타 핫플로 유명한 분위기 좋은 카페)",
     "mapsQuery": "Google 지도 검색용 쿼리"
   }
 ]
 \`\`\`
 
-name, address, rating, ratingCount는 Google 검색 결과의 정확한 정보로 채우고, mapsQuery는 "지역명 + 상호명" 형식으로 만들어줘.`;
+name, address, rating, ratingCount는 Google 검색 결과의 정확한 정보로 채우고, description은 해당 맛집의 특징이나 추천 이유를 간단히 적어주고, mapsQuery는 "지역명 + 상호명" 형식으로 만들어줘.`;
 
       console.log("Calling generateContent...");
       const model = ai.getGenerativeModel({
