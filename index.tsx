@@ -154,7 +154,7 @@ const App = () => {
 
   useEffect(() => {
     setMessages([
-      { role: 'model', text: '이 몸이 바로 부산 최고의 영웅 뚜기다!!\n\n맛집 찾는 거? 뚜기에게 맡겨! 알려주지!!\n\n"해운대 카페" 이런 식으로 말해 봐. 어떠냐?', restaurants: [] }
+      { role: 'model', text: '이 몸이 바로 부산 최고의 영웅 뚜기다!!\n\n맛집 찾는 거? 뚜기에게 맡겨! 알려주지!!\n\n"해운대 카페" 이런 식으로 말해 봐. 어떠냐?' }
     ]);
   }, []);
 
@@ -168,7 +168,7 @@ const App = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMessage = { role: 'user', text: input, restaurants: [] };
+    const userMessage = { role: 'user', text: input };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput('');
@@ -237,23 +237,6 @@ const App = () => {
   3. 음식점 특징/설명
   4. 주소
 - 절대 아스테리스크(*)나 별표를 사용하지 마
-- "뭐... 별거 아니지만 이런 곳들이 괜찮나?" 같은 시크한 말투로 시작하고 끝내기
-
-**데이터 제공 방식**
-맛집 추천 시 응답 끝에 다음 JSON 형식으로 맛집 정보를 포함해줘:
-
-\`\`\`json
-[
-  {
-    "name": "식당 이름",
-    "address": "정확한 주소", 
-    "rating": 4.5,
-    "ratingCount": 1234,
-    "description": "특징이나 추천 이유",
-    "mapsQuery": "지역명 + 상호명"
-  }
-]
-\`\`\`
 
 `;
 
@@ -267,21 +250,8 @@ const App = () => {
       console.log("API Response received:", response);
 
       let responseText = response.response.text();
-      let restaurants = [];
       
-      // 다양한 형태의 JSON 블록을 찾아서 파싱
-      const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
-      
-      if (jsonMatch && jsonMatch[1]) {
-          try {
-              restaurants = JSON.parse(jsonMatch[1]);
-              console.log("Parsed restaurants:", restaurants);
-          } catch (e) {
-              console.error("Failed to parse JSON:", e);
-          }
-      }
-      
-      // 모든 JSON 블록을 응답에서 완전히 제거
+      // JSON 블록을 완전히 제거하고 텍스트만 사용
       responseText = responseText.replace(/```json[\s\S]*?```/g, '').trim();
       
       // 응답이 비어있지 않도록 확인
@@ -292,12 +262,11 @@ const App = () => {
       const modelMessage = {
           role: 'model',
           text: responseText,
-          restaurants: restaurants,
       };
       setMessages(prev => [...prev, modelMessage]);
     } catch (error) {
       console.error("Error in handleSendMessage:", error);
-      const errorMessage = { role: 'model', text: '어... 어라? 뚜기가 지금 좀... 아니다! 있다가 얘기해줄게게!!\n\n잠깐만 기다려! 뚜기가 다시 알려줄게!', restaurants: [] };
+      const errorMessage = { role: 'model', text: '어... 어라? 뚜기가 지금 좀... 아니다! 있다가 얘기해줄게게!!\n\n잠깐만 기다려! 뚜기가 다시 알려줄게!' };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       console.log("Setting loading to false");
@@ -317,13 +286,6 @@ const App = () => {
             <div className="message-content">
               {msg.text && <div className="message-bubble" style={{whiteSpace: 'pre-line'}}>{msg.text}</div>}
               
-              {msg.restaurants && msg.restaurants.length > 0 && (
-                <div className="restaurants-container">
-                    {msg.restaurants.map((resto, i) => (
-                        <RestaurantCard key={i} restaurant={resto} />
-                    ))}
-                </div>
-              )}
             </div>
           </div>
         ))}
